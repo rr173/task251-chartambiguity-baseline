@@ -143,6 +143,13 @@ func (svc *Service) ImportSemantics(figureID string, p ImportPayload) error {
 			return err
 		}
 	}
+	// 图例与图层/轴/变量一样必须在写入前校验，否则后面某条图例格式错误时，
+	// 前面已写入的图层/轴/变量会残留在图形稿中，造成整批导入不一致。
+	for _, gi := range p.Legends {
+		if err := layer.ValidateLegend(model.Legend{Channel: gi.Channel, Label: gi.Label, Token: gi.Token, CoversVariable: gi.CoversVariable}); err != nil {
+			return err
+		}
+	}
 	for _, li := range p.Layers {
 		l := model.Layer{ID: model.NewID("lyr"), FigureID: figureID, Name: li.Name, LayerType: li.LayerType, ZOrder: li.ZOrder, Visible: li.Visible}
 		if err := svc.store.CreateLayer(&l); err != nil {
@@ -163,9 +170,6 @@ func (svc *Service) ImportSemantics(figureID string, p ImportPayload) error {
 	}
 	for _, gi := range p.Legends {
 		g := model.Legend{ID: model.NewID("lgd"), FigureID: figureID, Channel: gi.Channel, Label: gi.Label, Token: gi.Token, CoversVariable: gi.CoversVariable}
-		if err := layer.ValidateLegend(g); err != nil {
-			return err
-		}
 		if err := svc.store.CreateLegend(&g); err != nil {
 			return err
 		}
