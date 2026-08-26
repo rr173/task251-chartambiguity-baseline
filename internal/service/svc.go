@@ -230,10 +230,15 @@ func (svc *Service) DeclareEncoding(figureID, layerID, variable, channel, token 
 
 // RunCheck 重算变量-通道映射与全部歧义，更新编码状态与图形稿状态。
 // 返回本次计算出的歧义集合（含已被豁免者）。
+// 冻结后只读：规范发布冻结后禁止重算，以免改写编码状态、歧义记录与映射，
+// 污染历史规范对应的基础语义。
 func (svc *Service) RunCheck(figureID string) ([]model.Ambiguity, error) {
-	_, err := svc.store.GetFigure(figureID)
+	f, err := svc.store.GetFigure(figureID)
 	if err != nil {
 		return nil, err
+	}
+	if !f.CanEdit() {
+		return nil, model.ErrFrozen
 	}
 	encs, err := svc.store.ListEncodings(figureID)
 	if err != nil {
