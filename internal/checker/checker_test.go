@@ -55,7 +55,7 @@ func TestCheckAllExemption(t *testing.T) {
 		ID: "e1", FigureID: "f", Kind: model.ExceptionReuse,
 		TargetChannel: model.ChannelColor, TargetToken: "#1f77b4",
 	}}
-	got := CheckAll(encs, nil, legends, nil, excs)
+	got := CheckAll("f", encs, nil, legends, nil, excs)
 	if len(got) != 1 {
 		t.Fatalf("expected 1 ambiguity, got %d", len(got))
 	}
@@ -64,5 +64,24 @@ func TestCheckAllExemption(t *testing.T) {
 	}
 	if got[0].ExceptionID != "e1" {
 		t.Fatalf("expected exception id e1, got %s", got[0].ExceptionID)
+	}
+}
+
+// TestCheckAllAttributesFigureID 验证 CheckAll 把检测出的歧义归属到传入的图形稿，
+// 否则落库后按 figure_id 查询或统计未解决歧义都会误判为空，导致复核结果丢失与
+// 发布门禁被错误放行。
+func TestCheckAllAttributesFigureID(t *testing.T) {
+	encs := []model.VisualEncoding{
+		{FigureID: "f", Variable: "temp", Channel: model.ChannelColor, Token: "#1f77b4"},
+		{FigureID: "f", Variable: "conc", Channel: model.ChannelColor, Token: "#1f77b4"},
+	}
+	got := CheckAll("figure-xyz", encs, nil, nil, nil, nil)
+	if len(got) == 0 {
+		t.Fatal("expected ambiguities to be detected")
+	}
+	for _, a := range got {
+		if a.FigureID != "figure-xyz" {
+			t.Fatalf("ambiguity not attributed to figure: got FigureID=%q", a.FigureID)
+		}
 	}
 }

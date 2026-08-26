@@ -9,8 +9,10 @@ import (
 
 // CheckAll 汇总全部检测器的结果，并依据已登记的例外豁免对歧义做消解判定。
 // 返回当前计算出的歧义集合（被豁免的歧义 Resolved=true 并关联 exception_id）。
+// figureID 用于把每条歧义归属到对应图形稿，确保落库后可按图形稿检索与计数。
 // 入参均为某图形稿的实体切片；空切片表示无数据，不会产生歧义。
 func CheckAll(
+	figureID string,
 	encodings []model.VisualEncoding,
 	axes []model.Axis,
 	legends []model.Legend,
@@ -26,6 +28,9 @@ func CheckAll(
 	detected = append(detected, DetectMappingConflict(mappings)...)
 
 	for i := range detected {
+		// 检测器本身不关心图形稿归属；在此统一打标，避免落库后 figure_id 丢失，
+		// 否则按 figure_id 查询歧义或统计未解决歧义数都会误判为空。
+		detected[i].FigureID = figureID
 		detected[i].CreatedAt = now
 		if exc := matchException(detected[i], exceptions); exc != nil {
 			detected[i].Resolved = true

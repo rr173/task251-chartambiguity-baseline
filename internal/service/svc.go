@@ -266,7 +266,7 @@ func (svc *Service) RunCheck(figureID string) ([]model.Ambiguity, error) {
 		}
 	}
 
-	ambigs := checker.CheckAll(encs, axes, legends, maps, excs)
+	ambigs := checker.CheckAll(figureID, encs, axes, legends, maps, excs)
 
 	// 写回歧义（先清后写，保证与当前计算一致）。
 	if err := svc.store.DeleteAmbiguities(figureID); err != nil {
