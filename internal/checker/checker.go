@@ -41,8 +41,10 @@ func matchException(a model.Ambiguity, exceptions []model.Exception) *model.Exce
 		exc := exceptions[i]
 		switch a.Type {
 		case model.AmbiguityColorReuse, model.AmbiguityShapeReuse:
+			// 复用豁免按 channel+token 精确命中：同一通道上不同 token 的
+			// 复用歧义各自独立，豁免其中一个 token 不得连带消解另一个。
 			if exc.Kind == model.ExceptionReuse &&
-				exc.TargetChannel == a.Channel {
+				exc.TargetChannel == a.Channel && exc.TargetToken == a.Token {
 				return &exc
 			}
 		case model.AmbiguityAxisUnitConflict:
