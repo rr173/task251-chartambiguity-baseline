@@ -194,6 +194,11 @@ func (svc *Service) DeclareEncoding(figureID, layerID, variable, channel, token 
 	if !f.CanEdit() {
 		return nil, model.ErrFrozen
 	}
+	// 校验变量归属：编码引用的变量必须已在当前图形稿中声明。否则会为不存在的
+	// 变量建立「变量-通道」映射，导致复核结果出现无法解释的变量归属。
+	if _, err := svc.store.GetVariable(figureID, variable); err != nil {
+		return nil, err
+	}
 	if layerID != "" {
 		layers, err := svc.store.ListLayers(figureID)
 		if err != nil {
