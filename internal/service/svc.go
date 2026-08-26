@@ -124,6 +124,11 @@ func (svc *Service) ImportSemantics(figureID string, p ImportPayload) error {
 	}
 	sort.Strings(fpParts)
 	fp := model.Fingerprint(fpParts...)
+	// 幂等短路：相同语义的重复导入（如客户端重试）指纹与已存指纹一致，
+	// 直接返回成功，不再写入，从而避免产生重复的图层/轴/变量/图例。
+	if f.SourceFP != "" && f.SourceFP == fp {
+		return nil
+	}
 	// 先完整校验输入，再执行写入，避免后续非法项留下前面已写入的半套语义。
 	for _, li := range p.Layers {
 		if err := layer.ValidateLayer(model.Layer{Name: li.Name, LayerType: li.LayerType, ZOrder: li.ZOrder}); err != nil {
